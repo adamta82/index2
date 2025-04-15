@@ -28,6 +28,7 @@
       margin-bottom: 12px;
       border-bottom: 1px solid #eee;
       padding-bottom: 8px;
+      white-space: pre-wrap;
     }
     .label {
       font-weight: bold;
@@ -46,7 +47,6 @@
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
-
     const container = document.getElementById("data");
 
     if (!id) {
@@ -66,7 +66,14 @@
 
           for (const key in data) {
             if (data.hasOwnProperty(key)) {
-              const value = data[key] !== null ? data[key] : "—";
+              let value = data[key];
+              if (value && typeof value === "object") {
+                try {
+                  value = JSON.stringify(value, null, 2); // תצוגה קריאה
+                } catch {
+                  value = "[object]";
+                }
+              }
               const field = document.createElement("div");
               field.className = "field";
               field.innerHTML = `<span class="label">${key}:</span> <span>${value}</span>`;
