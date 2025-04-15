@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <title>מעקב הזמנה</title>
+    <style>
+      body {
+        font-family: 'Rubik', sans-serif;
+        background-color: #f9fafb;
+        padding: 20px;
+        direction: rtl;
+        text-align: right;
+      }
+      .card {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        padding: 20px;
+        max-width: 700px;
+        margin: auto;
+      }
+      .field {
+        margin-bottom: 12px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+      }
+      .label {
+        font-weight: bold;
+        color: #2563eb;
+        display: inline-block;
+        min-width: 120px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2>פרטי ההזמנה</h2>
+      <div id="data">טוען נתונים...</div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id"); // דוגמה: ?id=be3fd9cd-4919-4bca-b947-63817b8d5729
+
+      if (!id) {
+        document.getElementById("data").innerHTML = "<p>לא סופק מזהה הזמנה.</p>";
+      } else {
+        fetch(`https://fireberry-proxy.onrender.com/api/order/${id}`)
+          .then(res => res.json())
+          .then(data => {
+            const container = document.getElementById("data");
+            container.innerHTML = "";
+
+            if (!data || typeof data !== "object") {
+              container.innerHTML = "<p>לא נמצאו נתונים.</p>";
+              return;
+            }
+
+            for (const key in data) {
+              if (data.hasOwnProperty(key)) {
+                const value = data[key] !== null ? data[key] : "—";
+                const field = document.createElement("div");
+                field.className = "field";
+                field.innerHTML = `<span class="label">${key}:</span> <span>${value}</span>`;
+                container.appendChild(field);
+              }
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            document.getElementById("data").innerHTML = "<p>שגיאה בטעינת הנתונים.</p>";
+          });
+      }
+    </script>
+  </body>
+</html>
