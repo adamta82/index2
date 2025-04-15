@@ -21,20 +21,14 @@
       max-width: 700px;
       margin: auto;
     }
-    h2 {
-      margin-top: 0;
-    }
-    .field {
-      margin-bottom: 12px;
+    .line {
+      margin-bottom: 10px;
       border-bottom: 1px solid #eee;
-      padding-bottom: 8px;
+      padding-bottom: 6px;
       white-space: pre-wrap;
     }
-    .label {
-      font-weight: bold;
+    .line strong {
       color: #2563eb;
-      display: inline-block;
-      min-width: 120px;
     }
   </style>
 </head>
@@ -56,7 +50,6 @@
         .then(res => res.json())
         .then(response => {
           const data = response?.data;
-
           if (!data || typeof data !== "object") {
             container.innerHTML = "<p>לא נמצאו נתונים להזמנה זו.</p>";
             return;
@@ -67,17 +60,17 @@
           for (const key in data) {
             if (data.hasOwnProperty(key)) {
               let value = data[key];
-              if (value && typeof value === "object") {
+              if (typeof value === "object" && value !== null) {
                 try {
-                  value = JSON.stringify(value, null, 2); // תצוגה קריאה
+                  value = JSON.stringify(value);
                 } catch {
                   value = "[object]";
                 }
               }
-              const field = document.createElement("div");
-              field.className = "field";
-              field.innerHTML = `<span class="label">${key}:</span> <span>${value}</span>`;
-              container.appendChild(field);
+              const line = document.createElement("div");
+              line.className = "line";
+              line.innerHTML = `<strong>${key}</strong> > ${value}`;
+              container.appendChild(line);
             }
           }
         })
