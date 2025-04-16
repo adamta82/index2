@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>פרטי הזמנה</title>
+  <title>פרטי הזמנה - שדות נבחרים</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -25,8 +25,8 @@
       margin-top: 20px;
     }
     .field {
-      margin-bottom: 8px;
-      padding: 8px;
+      margin-bottom: 15px;
+      padding: 12px;
       border-bottom: 1px solid #f0f0f0;
     }
     .field-name {
@@ -39,12 +39,7 @@
     .field-value {
       color: #0066cc;
       display: inline-block;
-    }
-    .nested-container {
-      padding-right: 20px;
-      margin-top: 5px;
-      margin-bottom: 5px;
-      border-right: 2px solid #eaeaea;
+      font-weight: 500;
     }
     .loading {
       text-align: center;
@@ -62,23 +57,20 @@
       border-bottom: 2px solid #f0f0f0;
       padding-bottom: 10px;
     }
-    .array-item {
-      margin-bottom: 15px;
-      padding: 10px;
-      background-color: #f9f9f9;
-      border-radius: 5px;
-    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>📦 פרטי ההזמנה</h2>
+    <h2>📦 פרטי הזמנה - שדות נבחרים</h2>
     <div id="data" class="loading">טוען נתונים...</div>
   </div>
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
     const container = document.getElementById("data");
+    
+    // השדות שאנחנו רוצים להציג
+    const desiredFields = ["pcfsystemfield196", "companyname", "pcfsystemfield157"];
     
     if (!id) {
       container.innerHTML = "<p class='error'>חסר מזהה הזמנה בכתובת ה-URL. יש להוסיף ?id=xxxxx</p>";
@@ -88,7 +80,14 @@
         .then(response => {
           const data = response?.data || response;
           container.innerHTML = "";
-          renderObject(data, container);
+          
+          // בדיקה רקורסיבית של כל שדות האובייקט למציאת השדות המבוקשים
+          findAndDisplayFields(data, container, desiredFields);
+          
+          // אם לא נמצאו שדות, הצג הודעה
+          if (container.children.length === 0) {
+            container.innerHTML = "<p class='error'>השדות המבוקשים לא נמצאו בנתונים.</p>";
+          }
         })
         .catch(error => {
           console.error(error);
@@ -96,81 +95,51 @@
         });
     }
     
-    function renderObject(obj, parentElement, isArrayItem = false) {
-      const container = isArrayItem ? 
-        document.createElement('div') : 
-        document.createElement('div');
-      
-      if (isArrayItem) {
-        container.className = 'array-item';
-      } else {
-        container.className = 'data-container';
-      }
-      
-      for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-          const value = obj[key];
-          const fieldDiv = document.createElement('div');
-          fieldDiv.className = 'field';
-          
-          const fieldName = document.createElement('span');
-          fieldName.className = 'field-name';
-          fieldName.textContent = key + ":";
-          fieldDiv.appendChild(fieldName);
-          
-          if (value === null) {
-            const fieldValue = document.createElement('span');
-            fieldValue.className = 'field-value';
-            fieldValue.textContent = 'null';
-            fieldDiv.appendChild(fieldValue);
-          } else if (Array.isArray(value)) {
-            if (value.length === 0) {
-              const fieldValue = document.createElement('span');
-              fieldValue.className = 'field-value';
-              fieldValue.textContent = '[]';
-              fieldDiv.appendChild(fieldValue);
-            } else {
-              fieldDiv.appendChild(document.createElement('br'));
-              const nestedContainer = document.createElement('div');
-              nestedContainer.className = 'nested-container';
-              
-              value.forEach((item, index) => {
-                const itemHeader = document.createElement('div');
-                itemHeader.className = 'field-name';
-                itemHeader.textContent = `פריט ${index + 1}:`;
-                nestedContainer.appendChild(itemHeader);
-                
-                if (typeof item === 'object' && item !== null) {
-                  renderObject(item, nestedContainer, true);
-                } else {
-                  const itemValue = document.createElement('span');
-                  itemValue.className = 'field-value';
-                  itemValue.textContent = item;
-                  nestedContainer.appendChild(itemValue);
-                  nestedContainer.appendChild(document.createElement('br'));
-                }
-              });
-              
-              fieldDiv.appendChild(nestedContainer);
+    function findAndDisplayFields(obj, parentElement, desiredFields, path = "") {
+      // אם זה אובייקט או מערך
+      if (obj !== null && typeof obj === 'object') {
+        for (const key in obj) {
+          if (obj.hasOwnProperty(key)) {
+            const value = obj[key];
+            const currentPath = path ? `${path}.${key}` : key;
+            
+            // אם זה אחד השדות שאנחנו מחפשים
+            if (desiredFields.includes(key)) {
+              displayField(key, value, parentElement);
             }
-          } else if (typeof value === 'object') {
-            fieldDiv.appendChild(document.createElement('br'));
-            const nestedContainer = document.createElement('div');
-            nestedContainer.className = 'nested-container';
-            renderObject(value, nestedContainer);
-            fieldDiv.appendChild(nestedContainer);
-          } else {
-            const fieldValue = document.createElement('span');
-            fieldValue.className = 'field-value';
-            fieldValue.textContent = value;
-            fieldDiv.appendChild(fieldValue);
+            
+            // חיפוש רקורסיבי בתוך תתי-אובייקטים
+            if (value !== null && typeof value === 'object') {
+              findAndDisplayFields(value, parentElement, desiredFields, currentPath);
+            }
           }
-          
-          container.appendChild(fieldDiv);
         }
       }
+    }
+    
+    function displayField(key, value, parentElement) {
+      const fieldDiv = document.createElement('div');
+      fieldDiv.className = 'field';
       
-      parentElement.appendChild(container);
+      const fieldName = document.createElement('span');
+      fieldName.className = 'field-name';
+      fieldName.textContent = key + ":";
+      fieldDiv.appendChild(fieldName);
+      
+      const fieldValue = document.createElement('span');
+      fieldValue.className = 'field-value';
+      
+      // טיפול בערכים מיוחדים
+      if (value === null) {
+        fieldValue.textContent = 'null';
+      } else if (typeof value === 'object') {
+        fieldValue.textContent = JSON.stringify(value);
+      } else {
+        fieldValue.textContent = value;
+      }
+      
+      fieldDiv.appendChild(fieldValue);
+      parentElement.appendChild(fieldDiv);
     }
   </script>
 </body>
