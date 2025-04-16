@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>פרטי הזמנה - שדות נבחרים</title>
+  <title>פרטי הזמנה - מיפוי שדות CRM</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -26,20 +26,28 @@
     }
     .field {
       margin-bottom: 15px;
-      padding: 12px;
+      padding: 15px;
       border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .field-code {
+      font-weight: bold;
+      color: #000;
+      flex-basis: 200px;
+      margin-left: 15px;
     }
     .field-name {
       font-weight: bold;
-      color: #000;
-      margin-left: 10px;
-      display: inline-block;
-      min-width: 150px;
+      color: #555;
+      flex-basis: 200px;
+      margin-left: 15px;
     }
     .field-value {
       color: #0066cc;
-      display: inline-block;
       font-weight: 500;
+      flex-grow: 1;
     }
     .loading {
       text-align: center;
@@ -57,11 +65,27 @@
       border-bottom: 2px solid #f0f0f0;
       padding-bottom: 10px;
     }
+    .field-header {
+      display: flex;
+      font-weight: bold;
+      padding: 10px 15px;
+      background-color: #f3f4f6;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+    .field-header span:nth-child(1) {
+      flex-basis: 200px;
+      margin-left: 15px;
+    }
+    .field-header span:nth-child(2) {
+      flex-basis: 200px;
+      margin-left: 15px;
+    }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>📦 פרטי הזמנה - שדות נבחרים</h2>
+    <h2>📦 פרטי הזמנה - עם מיפוי שדות CRM</h2>
     <div id="data" class="loading">טוען נתונים...</div>
   </div>
   <script>
@@ -72,20 +96,65 @@
     // השדות שאנחנו רוצים להציג
     const desiredFields = ["pcfsystemfield196", "companyname", "pcfsystemfield157"];
     
+    // מיפוי שמות שדות ה-CRM (אם ידוע)
+    const fieldMappings = {
+      "pcfsystemfield196": "מספר לקוח",
+      "companyname": "שם חברה",
+      "pcfsystemfield157": "סוג לקוח",
+      "pcfsystemfield100": "מספר הזמנה"
+      // ניתן להוסיף מיפויים נוספים כאן
+    };
+    
     if (!id) {
       container.innerHTML = "<p class='error'>חסר מזהה הזמנה בכתובת ה-URL. יש להוסיף ?id=xxxxx</p>";
     } else {
+      // ניסיון לשלוף מידע על מבנה השדות (אם קיים API כזה)
+      // זה יכול להיות endpoint נפרד שמספק מידע על השדות
+      fetchFieldMetadata()
+        .then(metadata => {
+          // לאחר שיש לנו מידע על השדות (או מיפוי ברירת מחדל), נטען את הנתונים
+          fetchOrderData(metadata);
+        })
+        .catch(error => {
+          console.log("לא ניתן לטעון מידע על השדות, משתמש במיפוי ברירת מחדל", error);
+          // אם אין אפשרות לטעון מידע על השדות, נשתמש במיפוי שהגדרנו מראש
+          fetchOrderData(fieldMappings);
+        });
+    }
+    
+    function fetchFieldMetadata() {
+      // פונקציה זו תנסה לשלוף מידע על מבנה השדות מהשרת
+      // אם יש API שמספק מידע על השדות
+      
+      return new Promise((resolve, reject) => {
+        // כאן נוכל לבצע בקשת fetch לנקודת קצה שמספקת מידע על השדות
+        // לדוגמה: fetch('https://fireberry-proxy.onrender.com/api/metadata')
+        
+        // אם אין API כזה, נחזיר את המיפוי הקבוע שהגדרנו
+        resolve(fieldMappings);
+        
+        // לדוגמה עם קריאת API אמיתית:
+        // fetch('https://fireberry-proxy.onrender.com/api/metadata')
+        //   .then(res => res.json())
+        //   .then(data => resolve(data))
+        //   .catch(err => reject(err));
+      });
+    }
+    
+    function fetchOrderData(fieldMetadata) {
       fetch(`https://fireberry-proxy.onrender.com/api/order/${id}`)
         .then(res => res.json())
         .then(response => {
           const data = response?.data || response;
-          container.innerHTML = "";
           
-          // בדיקה רקורסיבית של כל שדות האובייקט למציאת השדות המבוקשים
-          findAndDisplayFields(data, container, desiredFields);
+          // ניצור כותרת לעמודות
+          createTableHeader();
+          
+          // נמצא ונציג את השדות המבוקשים
+          findAndDisplayFields(data, fieldMetadata);
           
           // אם לא נמצאו שדות, הצג הודעה
-          if (container.children.length === 0) {
+          if (container.children.length <= 1) { // בגלל הכותרת שהוספנו
             container.innerHTML = "<p class='error'>השדות המבוקשים לא נמצאו בנתונים.</p>";
           }
         })
@@ -95,7 +164,26 @@
         });
     }
     
-    function findAndDisplayFields(obj, parentElement, desiredFields, path = "") {
+    function createTableHeader() {
+      const headerDiv = document.createElement('div');
+      headerDiv.className = 'field-header';
+      
+      const codeHeader = document.createElement('span');
+      codeHeader.textContent = 'קוד השדה';
+      headerDiv.appendChild(codeHeader);
+      
+      const nameHeader = document.createElement('span');
+      nameHeader.textContent = 'שם השדה ב-CRM';
+      headerDiv.appendChild(nameHeader);
+      
+      const valueHeader = document.createElement('span');
+      valueHeader.textContent = 'ערך';
+      headerDiv.appendChild(valueHeader);
+      
+      container.appendChild(headerDiv);
+    }
+    
+    function findAndDisplayFields(obj, fieldMetadata, path = "") {
       // אם זה אובייקט או מערך
       if (obj !== null && typeof obj === 'object') {
         for (const key in obj) {
@@ -104,29 +192,34 @@
             const currentPath = path ? `${path}.${key}` : key;
             
             // אם זה אחד השדות שאנחנו מחפשים
-            if (desiredFields.includes(key)) {
-              displayField(key, value, parentElement);
+            if (desiredFields.includes(key) || key === "pcfsystemfield100") { // הוספנו גם את pcfsystemfield100
+              displayField(key, value, fieldMetadata[key] || "לא ידוע");
             }
             
             // חיפוש רקורסיבי בתוך תתי-אובייקטים
             if (value !== null && typeof value === 'object') {
-              findAndDisplayFields(value, parentElement, desiredFields, currentPath);
+              findAndDisplayFields(value, fieldMetadata, currentPath);
             }
           }
         }
       }
     }
     
-    function displayField(key, value, parentElement) {
+    function displayField(key, value, fieldName) {
       const fieldDiv = document.createElement('div');
       fieldDiv.className = 'field';
       
-      const fieldName = document.createElement('span');
-      fieldName.className = 'field-name';
-      fieldName.textContent = key + ":";
-      fieldDiv.appendChild(fieldName);
+      const fieldCode = document.createElement('div');
+      fieldCode.className = 'field-code';
+      fieldCode.textContent = key;
+      fieldDiv.appendChild(fieldCode);
       
-      const fieldValue = document.createElement('span');
+      const crmFieldName = document.createElement('div');
+      crmFieldName.className = 'field-name';
+      crmFieldName.textContent = fieldName;
+      fieldDiv.appendChild(crmFieldName);
+      
+      const fieldValue = document.createElement('div');
       fieldValue.className = 'field-value';
       
       // טיפול בערכים מיוחדים
@@ -139,7 +232,7 @@
       }
       
       fieldDiv.appendChild(fieldValue);
-      parentElement.appendChild(fieldDiv);
+      container.appendChild(fieldDiv);
     }
   </script>
 </body>
