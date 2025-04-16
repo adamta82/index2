@@ -6,7 +6,7 @@
   <title>פרטי הזמנה</title>
   <style>
     body {
-      font-family: monospace;
+      font-family: Arial, sans-serif;
       background-color: #f9fafb;
       margin: 0;
       padding: 40px 20px;
@@ -17,54 +17,160 @@
       background-color: #fff;
       border-radius: 10px;
       box-shadow: 0 0 10px rgba(0,0,0,0.05);
-      padding: 20px;
+      padding: 30px;
       max-width: 900px;
       margin: auto;
     }
-    pre {
-      text-align: left;
-      direction: ltr;
-      background-color: #f0f0f0;
+    .data-container {
+      margin-top: 20px;
+    }
+    .field {
+      margin-bottom: 8px;
+      padding: 8px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .field-name {
+      font-weight: bold;
+      color: #000;
+      margin-left: 10px;
+      display: inline-block;
+      min-width: 150px;
+    }
+    .field-value {
+      color: #0066cc;
+      display: inline-block;
+    }
+    .nested-container {
+      padding-right: 20px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      border-right: 2px solid #eaeaea;
+    }
+    .loading {
+      text-align: center;
       padding: 20px;
-      overflow-x: auto;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      word-break: break-word;
+      color: #666;
+    }
+    .error {
+      color: #e53e3e;
+      padding: 10px;
+      text-align: center;
     }
     h2 {
       margin-top: 0;
+      color: #333;
+      border-bottom: 2px solid #f0f0f0;
+      padding-bottom: 10px;
+    }
+    .array-item {
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>📦 פרטי ההזמנה (address + companyname)</h2>
-    <div id="data">טוען נתונים...</div>
+    <h2>📦 פרטי ההזמנה</h2>
+    <div id="data" class="loading">טוען נתונים...</div>
   </div>
-
   <script>
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
     const container = document.getElementById("data");
-
+    
     if (!id) {
-      container.innerHTML = "<p style='color:red;'>חסר מזהה הזמנה בכתובת ה-URL. יש להוסיף ?id=xxxxx</p>";
+      container.innerHTML = "<p class='error'>חסר מזהה הזמנה בכתובת ה-URL. יש להוסיף ?id=xxxxx</p>";
     } else {
       fetch(`https://fireberry-proxy.onrender.com/api/order/${id}`)
         .then(res => res.json())
         .then(response => {
-          const fullData = response?.data || {};
-          const filtered = {
-            address: fullData.address || null,
-            companyname: fullData.companyname || null
-          };
-          const json = JSON.stringify(filtered, null, 2);
-          container.innerHTML = `<pre>${json}</pre>`;
+          const data = response?.data || response;
+          container.innerHTML = "";
+          renderObject(data, container);
         })
         .catch(error => {
           console.error(error);
-          container.innerHTML = "<p style='color:red;'>שגיאה בעת טעינת הנתונים.</p>";
+          container.innerHTML = "<p class='error'>שגיאה בעת טעינת הנתונים.</p>";
         });
+    }
+    
+    function renderObject(obj, parentElement, isArrayItem = false) {
+      const container = isArrayItem ? 
+        document.createElement('div') : 
+        document.createElement('div');
+      
+      if (isArrayItem) {
+        container.className = 'array-item';
+      } else {
+        container.className = 'data-container';
+      }
+      
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          const value = obj[key];
+          const fieldDiv = document.createElement('div');
+          fieldDiv.className = 'field';
+          
+          const fieldName = document.createElement('span');
+          fieldName.className = 'field-name';
+          fieldName.textContent = key + ":";
+          fieldDiv.appendChild(fieldName);
+          
+          if (value === null) {
+            const fieldValue = document.createElement('span');
+            fieldValue.className = 'field-value';
+            fieldValue.textContent = 'null';
+            fieldDiv.appendChild(fieldValue);
+          } else if (Array.isArray(value)) {
+            if (value.length === 0) {
+              const fieldValue = document.createElement('span');
+              fieldValue.className = 'field-value';
+              fieldValue.textContent = '[]';
+              fieldDiv.appendChild(fieldValue);
+            } else {
+              fieldDiv.appendChild(document.createElement('br'));
+              const nestedContainer = document.createElement('div');
+              nestedContainer.className = 'nested-container';
+              
+              value.forEach((item, index) => {
+                const itemHeader = document.createElement('div');
+                itemHeader.className = 'field-name';
+                itemHeader.textContent = `פריט ${index + 1}:`;
+                nestedContainer.appendChild(itemHeader);
+                
+                if (typeof item === 'object' && item !== null) {
+                  renderObject(item, nestedContainer, true);
+                } else {
+                  const itemValue = document.createElement('span');
+                  itemValue.className = 'field-value';
+                  itemValue.textContent = item;
+                  nestedContainer.appendChild(itemValue);
+                  nestedContainer.appendChild(document.createElement('br'));
+                }
+              });
+              
+              fieldDiv.appendChild(nestedContainer);
+            }
+          } else if (typeof value === 'object') {
+            fieldDiv.appendChild(document.createElement('br'));
+            const nestedContainer = document.createElement('div');
+            nestedContainer.className = 'nested-container';
+            renderObject(value, nestedContainer);
+            fieldDiv.appendChild(nestedContainer);
+          } else {
+            const fieldValue = document.createElement('span');
+            fieldValue.className = 'field-value';
+            fieldValue.textContent = value;
+            fieldDiv.appendChild(fieldValue);
+          }
+          
+          container.appendChild(fieldDiv);
+        }
+      }
+      
+      parentElement.appendChild(container);
     }
   </script>
 </body>
