@@ -6,41 +6,39 @@
   <title>פרטי הזמנה</title>
   <style>
     body {
-      font-family: 'Rubik', sans-serif;
-      background-color: #f8fafb;
+      font-family: monospace;
+      background-color: #f9fafb;
       margin: 0;
       padding: 40px 20px;
       direction: rtl;
       text-align: right;
     }
     .card {
-      background-color: white;
+      background-color: #fff;
       border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-      padding: 25px 30px;
-      max-width: 800px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      padding: 20px;
+      max-width: 900px;
       margin: auto;
     }
-    h2 {
-      margin-top: 0;
-      font-size: 1.4em;
-    }
-    .line {
-      margin-bottom: 12px;
-      padding: 10px;
-      border-bottom: 1px solid #eee;
+    pre {
+      text-align: left;
+      direction: ltr;
+      background-color: #f0f0f0;
+      padding: 20px;
+      overflow-x: auto;
+      border-radius: 8px;
       white-space: pre-wrap;
       word-break: break-word;
     }
-    .key {
-      font-weight: bold;
-      color: #1e3a8a;
+    h2 {
+      margin-top: 0;
     }
   </style>
 </head>
 <body>
   <div class="card">
-    <h2>פרטי ההזמנה</h2>
+    <h2>📦 JSON - פרטי ההזמנה</h2>
     <div id="data">טוען נתונים...</div>
   </div>
 
@@ -50,39 +48,14 @@
     const container = document.getElementById("data");
 
     if (!id) {
-      container.innerHTML = "<p style='color: red;'>חסר מזהה הזמנה בכתובת ה-URL. יש להוסיף ?id=xxxxx</p>";
+      container.innerHTML = "<p style='color:red;'>חסר מזהה הזמנה בכתובת ה-URL. יש להוסיף ?id=xxxxx</p>";
     } else {
       fetch(`https://fireberry-proxy.onrender.com/api/order/${id}`)
         .then(res => res.json())
         .then(response => {
-          const data = response?.data;
-          if (!data || typeof data !== "object") {
-            container.innerHTML = "<p>לא נמצאו נתונים להזמנה זו.</p>";
-            return;
-          }
-
-          container.innerHTML = "";
-
-          for (const key in data) {
-            if (data.hasOwnProperty(key)) {
-              let value = data[key];
-
-              if (value === null || value === "") {
-                value = "—"; // הצגה נוחה לערכים ריקים
-              } else if (typeof value === "object") {
-                try {
-                  value = JSON.stringify(value, null, 2);
-                } catch {
-                  value = "[object]";
-                }
-              }
-
-              const line = document.createElement("div");
-              line.className = "line";
-              line.innerHTML = `<span class="key">${key}:</span> ${value}`;
-              container.appendChild(line);
-            }
-          }
+          const data = response?.data || response;
+          const json = JSON.stringify(data, null, 2); // הזחה של 2 רמות
+          container.innerHTML = `<pre>${json}</pre>`;
         })
         .catch(error => {
           console.error(error);
