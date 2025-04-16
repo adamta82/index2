@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>פרטי ההזמנה</title>
+  <title>פרטי הזמנה</title>
   <style>
     body {
       font-family: monospace;
@@ -38,7 +38,7 @@
 </head>
 <body>
   <div class="card">
-    <h2>📦 פרטי ההזמנה (address + companyname)</h2>
+    <h2>📦 JSON - פרטי ההזמנה</h2>
     <div id="data">טוען נתונים...</div>
   </div>
 
@@ -53,12 +53,8 @@
       fetch(`https://fireberry-proxy.onrender.com/api/order/${id}`)
         .then(res => res.json())
         .then(response => {
-          const fullData = response?.data || {};
-          const filtered = {
-            address: fullData.address || null,
-            companyname: fullData.companyname || null
-          };
-          const json = JSON.stringify(filtered, null, 2);
+          const data = response?.data || response;
+          const json = JSON.stringify(data, null, 2); // הזחה של 2 רמות
           container.innerHTML = `<pre>${json}</pre>`;
         })
         .catch(error => {
