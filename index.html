@@ -22,12 +22,13 @@
       margin: auto;
     }
     .line {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      padding-bottom: 4px;
       border-bottom: 1px solid #eee;
-      padding-bottom: 6px;
       white-space: pre-wrap;
     }
-    .line strong {
+    .key {
+      font-weight: bold;
       color: #2563eb;
     }
   </style>
@@ -44,7 +45,7 @@
     const container = document.getElementById("data");
 
     if (!id) {
-      container.innerHTML = "<p style='color: red;'>חסר מזהה הזמנה בכתובת ה-URL. יש להוסיף ?id=xxxx</p>";
+      container.innerHTML = "<p style='color: red;'>חסר מזהה הזמנה בכתובת ה-URL. יש להוסיף ?id=xxxxx</p>";
     } else {
       fetch(`https://fireberry-proxy.onrender.com/api/order/${id}`)
         .then(res => res.json())
@@ -69,7 +70,7 @@
               }
               const line = document.createElement("div");
               line.className = "line";
-              line.innerHTML = `<strong>${key}</strong> > ${value}`;
+              line.innerHTML = `<span class="key">${key}</span>: ${value}`;
               container.appendChild(line);
             }
           }
