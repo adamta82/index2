@@ -16,20 +16,25 @@
     .card {
       background-color: white;
       border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-      padding: 20px 30px;
-      max-width: 700px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      padding: 25px 30px;
+      max-width: 800px;
       margin: auto;
     }
+    h2 {
+      margin-top: 0;
+      font-size: 1.4em;
+    }
     .line {
-      margin-bottom: 8px;
-      padding-bottom: 4px;
+      margin-bottom: 12px;
+      padding: 10px;
       border-bottom: 1px solid #eee;
       white-space: pre-wrap;
+      word-break: break-word;
     }
     .key {
       font-weight: bold;
-      color: #2563eb;
+      color: #1e3a8a;
     }
   </style>
 </head>
@@ -61,16 +66,20 @@
           for (const key in data) {
             if (data.hasOwnProperty(key)) {
               let value = data[key];
-              if (typeof value === "object" && value !== null) {
+
+              if (value === null || value === "") {
+                value = "—"; // הצגה נוחה לערכים ריקים
+              } else if (typeof value === "object") {
                 try {
-                  value = JSON.stringify(value);
+                  value = JSON.stringify(value, null, 2);
                 } catch {
                   value = "[object]";
                 }
               }
+
               const line = document.createElement("div");
               line.className = "line";
-              line.innerHTML = `<span class="key">${key}</span>: ${value}`;
+              line.innerHTML = `<span class="key">${key}:</span> ${value}`;
               container.appendChild(line);
             }
           }
